@@ -42,6 +42,7 @@ contract FundMe {
      * @dev check if the added amount is more than the MINIMUM_USD_NEEDED
      * @dev if all the above conditions stands then add the amount
      */
+
     function addFunds() public payable {
         if (raise.amountAdded >= raise.amountRequired) revert FundMe__GoalCompleted();
         uint256 convertInputToUSD = msg.value.getConversionToUSD(dataFeed);

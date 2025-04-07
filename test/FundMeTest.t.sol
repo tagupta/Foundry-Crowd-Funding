@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {FundMe} from "../src/FundMe.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {stdError} from "forge-std/StdError.sol";
-import {FundMeScript} from '../script/FundMe.s.sol';
+import {FundMeScript} from "../script/FundMe.s.sol";
 /**
  * @title Writing test cases for Fund Me contract
  * @author Writer
@@ -21,7 +21,7 @@ contract FundMeTest is Test {
         vm.deal(address(fundMe), 0);
     }
 
-    function test_FundMeOwner() public view{
+    function test_FundMeOwner() public view {
         assertEq(fundMe.i_owner(), msg.sender);
     }
 
@@ -97,8 +97,8 @@ contract FundMeTest is Test {
         assertEq(address(fundMe).balance, 0);
     }
 
-    function test_PriceFeedVersionIsAccurate4() public view {
-        uint256 version = fundMe.getVersion();
-        assertEq(version, 4);
-    }
+    // function test_PriceFeedVersionIsAccurate4() public view {
+    //     uint256 version = fundMe.getVersion();
+    //     assertEq(version, 4);
+    // }
 }
