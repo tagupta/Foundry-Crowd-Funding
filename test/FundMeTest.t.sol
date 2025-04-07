@@ -78,12 +78,13 @@ contract FundMeTest is Test{
         amountFromFundeMe = msg.value;
     }
 
-    function test_RevertWhenCallerIsAContractWithNoReceiveEther() public {
+    function test_WhenCallerIsAContractWithReceiveEther() public {
         uint amount = 3e18;
         vm.prank(address(0x232));
         vm.deal(address(0x232), amount);
         fundMe.addFunds{value: amount}();
         fundMe.withdrawFunds();
         assertEq(amountFromFundeMe, fundMe.getTotalAddedAmount());
+        assertEq(address(fundMe).balance, 0);
     }
 }
