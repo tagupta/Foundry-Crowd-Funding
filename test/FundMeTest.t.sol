@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 
 import {FundMe} from '../src/FundMe.sol';
-import  {Test} from 'forge-std/Test.sol';
-import "forge-std/console.sol";
+import  {Test, console} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
 /**
  * @title Writing test cases for Fund Me contract
@@ -15,7 +14,12 @@ contract FundMeTest is Test{
     FundMe fundMe;
     uint amountFromFundeMe;
     function setUp() public {
-         fundMe = new FundMe("Alan", 3e18);
+         fundMe = new FundMe("Alan", 3e18, 0x694AA1769357215DE4FAC081bf1f309aDC325306);
+    }
+
+    function test_FundMeOwner() public view{
+        console.log("FundMe owner: ", fundMe.i_owner());
+        assertEq(fundMe.i_owner(), address(this));
     }
     
     function test_AddFunds() public view{
@@ -32,7 +36,7 @@ contract FundMeTest is Test{
     function test__SendAmount() public{
         uint amount = 1e18;
         uint amountAdded = address(fundMe).balance;
-        vm.deal(address(this), amount);
+        // vm.deal(address(this), amount);
         fundMe.addFunds{value: amount}();
         assertEq(address(fundMe).balance, amountAdded + 1 ether);
     }
@@ -75,6 +79,7 @@ contract FundMeTest is Test{
     }
 
     receive() external payable {
+        console.log('Amount withdrawn from the fund me account');
         amountFromFundeMe = msg.value;
     }
 
@@ -86,5 +91,10 @@ contract FundMeTest is Test{
         fundMe.withdrawFunds();
         assertEq(amountFromFundeMe, fundMe.getTotalAddedAmount());
         assertEq(address(fundMe).balance, 0);
+    }
+
+    function test_PriceFeedVersionIsAccurate4() public view {
+        uint version = fundMe.getVersion();
+        assertEq(version, 4);
     }
 }

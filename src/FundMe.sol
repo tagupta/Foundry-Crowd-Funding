@@ -2,14 +2,15 @@
 pragma solidity ^0.8.0;
 
 import {PriceConverter} from './PriceConverter.sol';
-
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 contract FundMe {
 
     using PriceConverter for uint256;
 
     uint constant public MINIMUM_USD_NEEDED = 5 * 1e18;
 
-    address payable immutable i_owner;
+    address payable immutable public i_owner;
+    AggregatorV3Interface private dataFeed;
 
     struct Raiser{
         string name;
@@ -25,9 +26,10 @@ contract FundMe {
     error FundMe__GoalNotCompletedYet();
     error FundMe__InsufficientFunds();
 
-    constructor(string memory _name, uint _amountRequired){
+    constructor(string memory _name, uint _amountRequired, address _addr){
         i_owner = payable(msg.sender);
         raise = Raiser(_name, _amountRequired, 0);
+        dataFeed = AggregatorV3Interface(_addr);
     }
 
     modifier onlyOwner(){
@@ -42,7 +44,7 @@ contract FundMe {
     */
     function addFunds() public payable {
         if(raise.amountAdded >= raise.amountRequired) revert FundMe__GoalCompleted();
-        uint convertInputToUSD = msg.value.getConversionToUSD();
+        uint convertInputToUSD = msg.value.getConversionToUSD(dataFeed);
         if(convertInputToUSD < MINIMUM_USD_NEEDED) revert FundMe__InsufficientFunds();
         creditors[msg.sender] += msg.value;
         raise.amountAdded += msg.value;
@@ -53,6 +55,10 @@ contract FundMe {
 
     function getTotalAddedAmount() public view returns(uint) {
         return raise.amountAdded;
+    }
+
+    function getVersion() public view returns(uint){
+        return PriceConverter.getVersion(dataFeed);
     }
 
     function withdrawFunds() public onlyOwner{
