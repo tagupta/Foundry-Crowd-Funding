@@ -9,7 +9,7 @@ contract FundMe {
 
     uint256 public constant MINIMUM_USD_NEEDED = 5 * 1e18;
 
-    address payable public immutable i_owner;
+    address payable private immutable i_owner;
     AggregatorV3Interface private s_dataFeed;
 
     struct Raiser {
@@ -18,8 +18,8 @@ contract FundMe {
         uint256 amountAdded;
     }
 
-    Raiser public s_raise;
-    mapping(address => uint256) public s_creditors;
+    Raiser private s_raise;
+    mapping(address => uint256) private s_creditors;
 
     error FundMe__UnauthorizedError();
     error FundMe__GoalCompleted();
@@ -75,5 +75,13 @@ contract FundMe {
 
     fallback() external payable {
         addFunds();
+    }
+
+    function getCreditorsFundedAmount(address _addr) external view returns (uint256) {
+        return s_creditors[_addr];
+    }
+
+    function getOwner() external view returns (address) {
+        return i_owner;
     }
 }

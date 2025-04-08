@@ -12,11 +12,11 @@ import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
 
 contract HelperConfig is Script {
     NetworkConfig public networkActiveConfig;
-    
+
     uint8 public constant DECIMALS = 8;
     int256 public constant INITIAL_PRICE = 2000e8;
-    uint public constant SEPOLIA_ETH_CHAINID = 11155111;
-    uint public constant MAINNET_ETH_CHAINID = 1;
+    uint256 public constant SEPOLIA_ETH_CHAINID = 11155111;
+    uint256 public constant MAINNET_ETH_CHAINID = 1;
 
     struct NetworkConfig {
         address priceFeed; //ETH/USD price feed
@@ -43,15 +43,12 @@ contract HelperConfig is Script {
     }
 
     function getorCreateAnvilEthConfig() public returns (NetworkConfig memory) {
-        if(networkActiveConfig.priceFeed != address(0)){
+        if (networkActiveConfig.priceFeed != address(0)) {
             console.log("Called up heer");
             return networkActiveConfig;
         }
         vm.startBroadcast();
-        MockV3Aggregator aggregatorInterace = new MockV3Aggregator({
-            _decimals: DECIMALS, 
-            _initialAnswer: INITIAL_PRICE
-        });
+        MockV3Aggregator aggregatorInterace = new MockV3Aggregator({_decimals: DECIMALS, _initialAnswer: INITIAL_PRICE});
         //Deploy the mock contract
         vm.stopBroadcast();
         NetworkConfig memory anvilConfig = NetworkConfig(address(aggregatorInterace));

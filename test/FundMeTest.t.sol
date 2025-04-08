@@ -7,22 +7,25 @@ import {stdError} from "forge-std/StdError.sol";
 import {FundMeScript} from "../script/FundMe.s.sol";
 /**
  * @title Writing test cases for Fund Me contract
- * @author Writer
  */
 
 contract FundMeTest is Test {
     // error FundMe__InsufficientFunds();
     FundMe fundMe;
     uint256 amountFromFundeMe;
+    address USER = makeAddr("alice");
+    uint256 constant SEND_VALUE = 5e18;
+    uint256 constant STARTING_BALANCE = 1e18;
 
     function setUp() public {
         FundMeScript script = new FundMeScript();
         fundMe = script.run();
         vm.deal(address(fundMe), 0);
+        vm.deal(fundMe.getOwner(), 0);
     }
 
     function test_FundMeOwner() public view {
-        assertEq(fundMe.i_owner(), msg.sender);
+        assertEq(fundMe.getOwner(), msg.sender);
     }
 
     function test_FundsNotAddedYet() public view {
@@ -37,11 +40,28 @@ contract FundMeTest is Test {
     }
 
     function test__SendAmount() public {
-        uint256 amount = 1e18;
+        uint256 amount = STARTING_BALANCE;
         uint256 amountAdded = address(fundMe).balance;
         // vm.deal(address(this), amount);
         fundMe.addFunds{value: amount}();
         assertEq(address(fundMe).balance, amountAdded + 1 ether);
+    }
+
+    function testCreditorAmountAdded() public {
+        //Arrange
+        uint256 amount = STARTING_BALANCE;
+        uint256 amountAddedByCreditor = fundMe.getCreditorsFundedAmount(USER);
+        // vm.prank(USER);
+        // vm.deal(USER, amount);
+        hoax(USER, amount);
+
+        //Act
+        fundMe.addFunds{value: amount}();
+
+        //Assert
+        assertEq(amountAddedByCreditor, 0);
+        amountAddedByCreditor = fundMe.getCreditorsFundedAmount(USER);
+        assertEq(STARTING_BALANCE, amountAddedByCreditor);
     }
 
     function test_RevertWithVeryHighAmountAdded() public {
@@ -59,27 +79,30 @@ contract FundMeTest is Test {
     }
 
     function test_RevertWhenNonOwnerWithdraws() public {
-        vm.prank(address(0x123));
+        vm.prank(USER);
         vm.expectRevert(FundMe.FundMe__UnauthorizedError.selector);
         fundMe.withdrawFunds();
     }
 
     function test_RevertWhenWithdrawnBeforeFundsRaised() public {
-        vm.prank(msg.sender);
+        vm.prank(fundMe.getOwner());
         vm.expectRevert(FundMe.FundMe__GoalNotCompletedYet.selector);
         fundMe.withdrawFunds();
     }
 
-    function test_RevertWhenMoreAddedThanNeeded() public {
-        uint256 amount = 5e18;
-        vm.prank(address(0x232));
-        vm.deal(address(0x232), amount);
-        fundMe.addFunds{value: amount}();
-        assertEq(address(fundMe).balance, amount);
-        amount = 1e18;
-        vm.deal(address(this), amount);
+    modifier funded() {
+        // vm.prank(USER);
+        // vm.deal(USER, SEND_VALUE);
+        hoax(USER, SEND_VALUE);
+        fundMe.addFunds{value: SEND_VALUE}();
+        _;
+    }
+
+    function test_RevertWhenMoreAddedThanNeeded() public funded {
+        assertEq(address(fundMe).balance, SEND_VALUE);
+        vm.deal(address(this), STARTING_BALANCE);
         vm.expectRevert(FundMe.FundMe__GoalCompleted.selector);
-        fundMe.addFunds{value: amount}();
+        fundMe.addFunds{value: STARTING_BALANCE}();
     }
 
     receive() external payable {
@@ -87,18 +110,34 @@ contract FundMeTest is Test {
         amountFromFundeMe = msg.value;
     }
 
-    function test_WhenCallerIsAContractWithReceiveEther() public {
-        uint256 amount = 5e18;
-        vm.prank(address(0x232));
-        vm.deal(address(0x232), amount);
-        fundMe.addFunds{value: amount}();
-        vm.prank(msg.sender);
+    function test_WhenCallerIsAContractWithReceiveEther() public funded {
+        vm.prank(fundMe.getOwner());
         fundMe.withdrawFunds();
         assertEq(address(fundMe).balance, 0);
     }
 
-    // function test_PriceFeedVersionIsAccurate4() public view {
-    //     uint256 version = fundMe.getVersion();
-    //     assertEq(version, 4);
-    // }
+    modifier multipleFundsAdded(){
+        uint256 noOfFunders = 5;
+            for (uint160 i = 0; i < noOfFunders; i++) {
+                hoax(address(i + 1), STARTING_BALANCE);
+                fundMe.addFunds{value: STARTING_BALANCE}();
+        }
+        _;
+    }
+
+    function test_WhenMultipleFundersAddMoney() public multipleFundsAdded{
+        uint256 sumAddedByCreditors;
+        for (uint160 i; i < 5; i++) {
+            sumAddedByCreditors += fundMe.getCreditorsFundedAmount(address(i + 1));
+        }
+        assertEq(address(fundMe).balance, sumAddedByCreditors);
+        
+    }
+
+    function test_WithdrawWhen_MultipleFundsAdded() public multipleFundsAdded {
+        vm.prank(fundMe.getOwner());
+        fundMe.withdrawFunds();
+        assertEq(address(fundMe).balance, 0);
+        assertEq(fundMe.getOwner().balance, SEND_VALUE);
+    }
 }
