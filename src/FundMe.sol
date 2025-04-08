@@ -10,7 +10,7 @@ contract FundMe {
     uint256 public constant MINIMUM_USD_NEEDED = 5 * 1e18;
 
     address payable public immutable i_owner;
-    AggregatorV3Interface private dataFeed;
+    AggregatorV3Interface private s_dataFeed;
 
     struct Raiser {
         string name;
@@ -18,8 +18,8 @@ contract FundMe {
         uint256 amountAdded;
     }
 
-    Raiser public raise;
-    mapping(address => uint256) public creditors;
+    Raiser public s_raise;
+    mapping(address => uint256) public s_creditors;
 
     error FundMe__UnauthorizedError();
     error FundMe__GoalCompleted();
@@ -28,8 +28,8 @@ contract FundMe {
 
     constructor(string memory _name, uint256 _amountRequired, address _addr) {
         i_owner = payable(msg.sender);
-        raise = Raiser(_name, _amountRequired, 0);
-        dataFeed = AggregatorV3Interface(_addr);
+        s_raise = Raiser(_name, _amountRequired, 0);
+        s_dataFeed = AggregatorV3Interface(_addr);
     }
 
     modifier onlyOwner() {
@@ -44,27 +44,27 @@ contract FundMe {
      */
 
     function addFunds() public payable {
-        if (raise.amountAdded >= raise.amountRequired) revert FundMe__GoalCompleted();
-        uint256 convertInputToUSD = msg.value.getConversionToUSD(dataFeed);
+        if (s_raise.amountAdded >= s_raise.amountRequired) revert FundMe__GoalCompleted();
+        uint256 convertInputToUSD = msg.value.getConversionToUSD(s_dataFeed);
         if (convertInputToUSD < MINIMUM_USD_NEEDED) revert FundMe__InsufficientFunds();
-        creditors[msg.sender] += msg.value;
-        raise.amountAdded += msg.value;
+        s_creditors[msg.sender] += msg.value;
+        s_raise.amountAdded += msg.value;
     }
 
     function getNeededAmount() public view returns (uint256) {
-        return raise.amountRequired;
+        return s_raise.amountRequired;
     }
 
     function getTotalAddedAmount() public view returns (uint256) {
-        return raise.amountAdded;
+        return s_raise.amountAdded;
     }
 
     function getVersion() public view returns (uint256) {
-        return dataFeed.version();
+        return s_dataFeed.version();
     }
 
     function withdrawFunds() public onlyOwner {
-        if (raise.amountAdded < raise.amountRequired) revert FundMe__GoalNotCompletedYet();
+        if (s_raise.amountAdded < s_raise.amountRequired) revert FundMe__GoalNotCompletedYet();
         (bool success,) = payable(i_owner).call{value: address(this).balance}("");
         if (!success) revert("Transfer failed");
     }

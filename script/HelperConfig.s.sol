@@ -7,7 +7,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.0;
 
-import {Script} from "forge-std/Script.sol";
+import {Script, console} from "forge-std/Script.sol";
 import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
 
 contract HelperConfig is Script {
@@ -28,7 +28,7 @@ contract HelperConfig is Script {
         } else if (block.chainid == MAINNET_ETH_CHAINID) {
             networkActiveConfig = getEthConfig();
         } else {
-            networkActiveConfig = getAnvilEthConfig();
+            networkActiveConfig = getorCreateAnvilEthConfig();
         }
     }
 
@@ -42,7 +42,11 @@ contract HelperConfig is Script {
         return ethConfig;
     }
 
-    function getAnvilEthConfig() public returns (NetworkConfig memory) {
+    function getorCreateAnvilEthConfig() public returns (NetworkConfig memory) {
+        if(networkActiveConfig.priceFeed != address(0)){
+            console.log("Called up heer");
+            return networkActiveConfig;
+        }
         vm.startBroadcast();
         MockV3Aggregator aggregatorInterace = new MockV3Aggregator({
             _decimals: DECIMALS, 
