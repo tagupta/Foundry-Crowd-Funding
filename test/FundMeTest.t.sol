@@ -16,6 +16,7 @@ contract FundMeTest is Test {
     address USER = makeAddr("alice");
     uint256 constant SEND_VALUE = 5e18;
     uint256 constant STARTING_BALANCE = 1e18;
+    uint256 constant GAS_PRICE = 1;
 
     function setUp() public {
         FundMeScript script = new FundMeScript();
@@ -135,8 +136,14 @@ contract FundMeTest is Test {
     }
 
     function test_WithdrawWhen_MultipleFundsAdded() public multipleFundsAdded {
+        uint gasStart = gasleft();
+        vm.txGasPrice(GAS_PRICE);
         vm.prank(fundMe.getOwner());
-        fundMe.withdrawFunds();
+        fundMe.withdrawFunds(); //Gas must have used here.
+        uint gasEnd = gasleft();
+        uint gasUsed = (gasStart  - gasEnd) * tx.gasprice;
+        console.log("gasUsed : ", gasUsed);
+
         assertEq(address(fundMe).balance, 0);
         assertEq(fundMe.getOwner().balance, SEND_VALUE);
     }
