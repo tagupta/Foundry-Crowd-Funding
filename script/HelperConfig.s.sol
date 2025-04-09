@@ -44,7 +44,6 @@ contract HelperConfig is Script {
 
     function getorCreateAnvilEthConfig() public returns (NetworkConfig memory) {
         if (networkActiveConfig.priceFeed != address(0)) {
-            console.log("Called up heer");
             return networkActiveConfig;
         }
         vm.startBroadcast();
