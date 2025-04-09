@@ -22,10 +22,10 @@ contract InteractionTest is Test {
 
     function testUserCanFundWithInteractions() public {
         FundFundMe fundFundMe = new FundFundMe();
-        uint balanceBefore = msg.sender.balance;
+        uint256 balanceBefore = msg.sender.balance;
 
         fundFundMe.fundFundMe(address(fundMe));
-        uint balanceAfter = msg.sender.balance;
+        uint256 balanceAfter = msg.sender.balance;
 
         assertEq(SEND_VALUE, address(fundMe).balance);
         assertApproxEqRel(balanceBefore - balanceAfter, 5e18, 0.05e16);

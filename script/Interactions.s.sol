@@ -9,7 +9,7 @@ contract FundFundMe is Script {
     uint256 constant INITIAL_VALUE = 5e18;
     address USER = makeAddr("alice");
 
-    function fundFundMe(address mostRecentDeployed) public payable{
+    function fundFundMe(address mostRecentDeployed) public payable {
         vm.startBroadcast();
         FundMe(payable(mostRecentDeployed)).addFunds{value: INITIAL_VALUE}();
         vm.stopBroadcast();
